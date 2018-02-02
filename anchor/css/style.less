@@ -1,0 +1,225 @@
+.lime {
+  .pagination {
+    width: 100%;
+    display: inline-flex;
+    justify-content: space-around;
+  }
+  .circle {
+    width: 15px;
+    height: 15px;
+    margin-right: 10px;
+    text-align: center;
+    border-radius: 50%,
+  }
+  .full_flex {
+    flex-basis:100%;
+  }
+  &.whole_experiment {
+    // display: flex;
+  }
+  &.linear {
+    width: 450px;
+    height:175px;
+  }
+  &.bar_chart {
+    width: 450px;
+    height:175px;
+    // overflow: scroll;
+    svg {
+       width: 800px;
+       height:800px;
+     }
+  }
+  &.explanation_frame {
+    // display: flex;
+    // flex-wrap: wrap;
+    // padding: 10px;
+  }
+  &.prediction_frame {
+    // display: flex;
+    // position:relative;
+    // flex-wrap: wrap;
+    // flex-basis:100%;
+    // .ant-collapse {
+    //   width: 100%;
+    // }
+    // .instance_and_prediction {
+    //   display: flex;
+    //   justify-content: space-around;
+    // }
+  }
+  &.example_roll {
+    .examples_div {
+      display: flex;
+      justify-content: space-around;
+      align-items: center;
+      flex-wrap: wrap;
+      .example_div {
+        margin: 5px;
+        border: 1px solid #929292;
+        border-radius: 3px;
+      }
+    }
+  }
+  &.anchor {
+    // max-width: 450px;
+    span {
+      margin-right:5px;
+    }
+    .model_prediction {
+      padding: 5px 0px 15px;
+      .ant-collapse {
+        width: 100%;
+      }
+      .label {
+        color: white;
+        padding: 3px;
+      }
+      .percentage {
+        font-size: 20px;
+        font-weight: bold;
+        margin: 0px;
+      }
+    }
+  }
+  &.predict_proba {
+    font: 14px tahoma, sans-serif;
+    width: 245px;
+    flex-shrink: 0;
+    svg {
+      width: 245px;
+    }
+  }
+  // &.anchor_coverage {
+  //   font: 14px tahoma, sans-serif;
+  //   max-width: 250px;
+  //   height: 250px;
+  //   svg {
+  //     width: 100%;
+  //     height: 100%;
+  //   }
+  // }
+  &.raw_tabular {
+    max-width: 400px;
+    position:relative;
+    table {
+      border-collapse: collapse;
+      color: white;
+      border-style: hidden;
+      margin: 0 auto;
+      text-align: center;
+      td {
+        padding: 5px;
+        width: 400;
+      }
+      // table-layout: fixed;
+      word-break: break-all;
+    }
+    .table_head {
+      color: rgba(0, 0, 0, 0.65);
+      font-size: 18px;
+    }
+    .table_body {
+      color: rgba(0, 0, 0, 0.65);
+      border-style: hidden;
+    }
+    .table_row {
+      &.show_more {
+        border-top: 1px solid #ccc;
+        background-color: rgba(217, 217, 217, 0.2);
+        color: rgba(0, 0, 0, 0.65);
+        cursor: pointer;
+      }
+    }
+  }
+  &.raw_text {
+    max-height: 300px;
+    flex: 1 0 400px;
+    overflow: scroll;
+    white-space: pre-wrap;
+  }
+  // &.counter_examples {
+  //   max-width: 800px;
+  //   display: flex;
+  //   flex-wrap: wrap;
+  //   .old_value {
+  //     text-decoration: line-through;
+  //     margin-right: 10px;
+  //     color: red;
+  //   }
+  // }
+  &.human_experiment {
+    padding: 10px;
+  }
+}
+
+/**
+ * Rangeslider
+ */
+.rangeslider {
+	margin: 20px 0;
+	position: relative;
+  background: #e6e6e6;
+  .rangeslider__fill, .rangeslider__handle {
+  	position: absolute;
+  }
+  &, .rangeslider__fill {
+  	display: block;
+  	box-shadow: inset 0px 1px 3px rgba(0, 0, 0, 0.3);
+  }
+  .rangeslider__handle {
+    background: #fff;
+    border: 1px solid #ccc;
+    cursor: pointer;
+    display: inline-block;
+    position: absolute;
+    &:active {
+      background: #999;
+    }
+  }
+}
+
+/**
+ * Rangeslider - Horizontal slider
+ */
+.rangeslider-horizontal {
+	height: 20px;
+  width: 300px;
+	border-radius: 10px;
+	.rangeslider__fill {
+		height: 100%;
+		background: #27ae60;
+		border-radius: 10px;
+		top: 0;
+	}
+	.rangeslider__handle {
+		width: 40px;
+		height: 40px;
+		border-radius: 40px;
+		top: -10px;
+	}
+}
+
+/**
+ * Rangeslider - Vertical slider
+ */
+.rangeslider-vertical {
+	margin: 20px auto;
+	height: 150px;
+	max-width: 10px;
+	background: none;
+	.rangeslider__fill {
+		width: 100%;
+		background: #27ae60;
+		box-shadow: none;
+		bottom: 0;
+	}
+	.rangeslider__handle {
+		width: 30px;
+		height: 10px;
+		left: -10px;
+		&:active {
+			box-shadow: none;
+		}
+	}
+}
