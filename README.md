@@ -20,3 +20,6 @@ Or clone the repository and run:
 
 #### Examples
 See notebooks folder for tutorials.
+
+- [Tabular data](https://github.com/marcotcr/anchor/blob/master/notebooks/Anchor%20on%20tabular%20data.ipynb)
+- [Text data](https://github.com/marcotcr/anchor/blob/master/notebooks/Anchor%20for%20text.ipynb)
