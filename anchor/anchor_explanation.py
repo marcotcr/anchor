@@ -1,3 +1,4 @@
+from __future__ import print_function
 import io
 
 
@@ -81,8 +82,8 @@ class AnchorExplanation:
             anchor until a certain index.
         """
         if only_different_prediction and only_same_prediction:
-            print 'Error: you can\'t have only_different_prediction \
-and only_same_prediction at the same time'
+            print('Error: you can\'t have only_different_prediction \
+and only_same_prediction at the same time')
             return []
         key = 'covered'
         if only_different_prediction:

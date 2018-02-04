@@ -1,4 +1,4 @@
-import anchor_base
+from . import anchor_base
 import numpy as np
 import sklearn
 

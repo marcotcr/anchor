@@ -1,6 +1,6 @@
-import anchor_base
-import anchor_explanation
-import utils
+from . import anchor_base
+from . import anchor_explanation
+from . import utils
 import lime
 import lime.lime_tabular
 import collections
@@ -120,13 +120,13 @@ class AnchorTabularExplainer(object):
         ret_obj = []
         if len(examples) == 0:
             return ret_obj
-        weights = [predicted_label if x in features_in_anchor else -1
+        weights = [int(predicted_label) if x in features_in_anchor else -1
                    for x in range(examples.shape[1])]
         for ex in examples:
             values = [self.categorical_names[i][int(ex[i])]
                       if i in self.categorical_features
                       else ex[i] for i in range(ex.shape[0])]
-            ret_obj.append(zip(self.feature_names, values, weights))
+            ret_obj.append(list(zip(self.feature_names, values, weights)))
         return ret_obj
 
     def to_explanation_map(self, exp):
@@ -163,12 +163,12 @@ class AnchorTabularExplainer(object):
         values = [self.categorical_names[i][int(instance[i])]
                   if i in self.categorical_features
                   else instance[i] for i in range(instance.shape[0])]
-        raw_data = zip(self.feature_names, values, weights)
+        raw_data = list(zip(self.feature_names, values, weights))
         ret = {
             'explanation': explanation,
             'rawData': raw_data,
             'predictProba': list(predict_proba),
-            'labelNames': map(str, self.class_names),
+            'labelNames': list(map(str, self.class_names)),
             'rawDataType': 'tabular',
             'explanationType': 'anchor',
             'trueClass': False

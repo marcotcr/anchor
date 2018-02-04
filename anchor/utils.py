@@ -22,7 +22,7 @@ class Bunch(object):
 def map_array_values(array, value_map):
     # value map must be { src : target }
     ret = array.copy()
-    for src, target in value_map.iteritems():
+    for src, target in value_map.items():
         ret[ret == src] = target
     return ret
 def replace_binary_values(array, values):
@@ -269,6 +269,8 @@ def load_csv_dataset(data, target_idx, delimiter=',',
                             if x not in categorical_features]
         categorical_features = range(data.shape[1])
         categorical_names.update(disc.names)
+    for x in categorical_names:
+        categorical_names[x] = [y.decode() if type(y) == np.bytes_ else y for y in categorical_names[x]]
     ret.ordinal_features = ordinal_features
     ret.categorical_features = categorical_features
     ret.categorical_names = categorical_names
