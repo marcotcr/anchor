@@ -95,6 +95,7 @@ class AnchorText(object):
 
     def as_html(self, exp):
         predict_proba = np.zeros(len(self.class_names))
+        exp['prediction'] = int(exp['prediction'])
         predict_proba[exp['prediction']] = 1
         predict_proba = list(predict_proba)
 
@@ -114,7 +115,7 @@ class AnchorText(object):
                 ex = [x[0] for x in examples[name]]
                 out = []
                 for e in ex:
-                    processed = self.nlp(unicode(e))
+                    processed = self.nlp(unicode(str(e)))
                     raw_indexes = [(processed[i].text, processed[i].idx, exp['prediction']) for i in idxs]
                     out.append({'text': e, 'rawIndexes': raw_indexes})
                 out_dict[new] = out
@@ -133,6 +134,7 @@ class AnchorText(object):
         raw_indexes = [(processed[i].text, processed[i].idx, exp['prediction'])
                        for i in exp['feature']]
         raw_data = {'text': exp['instance'], 'rawIndexes': raw_indexes}
+        jsonize(raw_indexes)
 
         out = u'''<html>
         <meta http-equiv="content-type" content="text/html; charset=UTF8">
