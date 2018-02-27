@@ -1,5 +1,5 @@
 # Anchor
-This repository has code for the paper [*High-Precision Model-Agnostic Explanations*](https://homes.cs.washington.edu/~marcotcr/aaai18.pdf).
+This repository has code for the paper [*High-Precision Model-Agnostic Explanations*](https://homes.cs.washington.edu/~marcotcr/aaai18.pdf).  
 
 An anchor explanation is a rule that sufficiently “anchors” the
 prediction locally – such that changes to the rest of the feature
@@ -23,3 +23,6 @@ See notebooks folder for tutorials.
 
 - [Tabular data](https://github.com/marcotcr/anchor/blob/master/notebooks/Anchor%20on%20tabular%20data.ipynb)
 - [Text data](https://github.com/marcotcr/anchor/blob/master/notebooks/Anchor%20for%20text.ipynb)
+
+## Citation
+[Here](https://homes.cs.washington.edu/~marcotcr/aaai18.bib) is the bibtex if you want to cite this work.
