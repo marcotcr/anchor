@@ -334,7 +334,7 @@ class Neighbors:
                 queries = [w for w in self.to_check
                             if w.is_lower == word.is_lower]
                 if word.prob < -15:
-                    queries += [w]
+                    queries += [word]
                 by_similarity = sorted(
                     queries, key=lambda w: word.similarity(w), reverse=True)
                 self.n[orig_word] = [(self.nlp(w.orth_)[0], word.similarity(w))

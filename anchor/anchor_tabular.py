@@ -25,13 +25,16 @@ class AnchorTabularExplainer(object):
         feature_names: list of strings
         data: used to build one hot encoder
         categorical_names: map from integer to list of strings, names for each
-            value of the categorical features
-        ordinal_features: list of integers, features that are discretized
+            value of the categorical features. Every feature that is not in
+            this map will be considered as ordinal, and thus discretized.
+        ordinal_features: list of integers, features that were
     """
     def __init__(self, class_names, feature_names, data=None,
                  categorical_names=None, ordinal_features=[]):
         self.encoder = collections.namedtuple('random_name',
                                               ['transform'])(lambda x: x)
+        self.disc = collections.namedtuple('random_name2',
+                                              ['discretize'])(lambda x: x)
         self.categorical_features = []
         if categorical_names:
             # TODO: Check if this n_values is correct!!
@@ -42,7 +45,8 @@ class AnchorTabularExplainer(object):
                 n_values=n_values)
             self.encoder.fit(data)
             self.categorical_features = self.encoder.categorical_features
-        self.ordinal_features = ordinal_features
+        if len(ordinal_features) == 0:
+            self.ordinal_features = [x for x in range(len(feature_names)) if x not in self.categorical_features]
         self.feature_names = feature_names
         self.class_names = class_names
         self.categorical_names = categorical_names
@@ -64,13 +68,22 @@ class AnchorTabularExplainer(object):
         for f in range(train_data.shape[1]):
             if f in self.categorical_features:
                 continue
+            self.disc = lime.lime_tabular.QuartileDiscretizer(train_data,
+                                                         self.categorical_features,
+                                                         self.feature_names)
+            val = self.disc.discretize(validation_data)
+            self.categorical_names.update(self.disc.names)
+            self.ordinal_features = [x for x in range(val.shape[1])
+                                if x not in self.categorical_features]
+            self.categorical_features += self.ordinal_features
+
             self.min[f] = np.min(train_data[:, f])
             self.max[f] = np.max(train_data[:, f])
             self.std[f] = np.std(train_data[:, f])
 
 
     def sample_from_train(self, conditions_eq, conditions_neq, conditions_geq,
-                          conditions_leq, num_samples, validation=False):
+                          conditions_leq, num_samples, validation=True):
         """
         bla
         """
@@ -122,6 +135,7 @@ class AnchorTabularExplainer(object):
             return ret_obj
         weights = [int(predicted_label) if x in features_in_anchor else -1
                    for x in range(examples.shape[1])]
+        examples = self.disc.discretize(examples)
         for ex in examples:
             values = [self.categorical_names[i][int(ex[i])]
                       if i in self.categorical_features
@@ -130,7 +144,6 @@ class AnchorTabularExplainer(object):
         return ret_obj
 
     def to_explanation_map(self, exp):
-
         def jsonize(x): return json.dumps(x)
         instance = exp['instance']
         predicted_label = exp['prediction']
@@ -160,6 +173,7 @@ class AnchorTabularExplainer(object):
                        'examples': examples_obj,
                        'onlyShowActive': False}
         weights = [-1 for x in range(instance.shape[0])]
+        instance = self.disc.discretize(exp['instance'].reshape(1, -1))[0]
         values = [self.categorical_names[i][int(instance[i])]
                   if i in self.categorical_features
                   else instance[i] for i in range(instance.shape[0])]
@@ -203,8 +217,7 @@ class AnchorTabularExplainer(object):
         return out
 
 
-    def get_sample_fn(self, data_row, classifier_fn,
-                      sample_whole_instances=True, desired_label=None):
+    def get_sample_fn(self, data_row, classifier_fn, desired_label=None):
         def predict_fn(x):
             return classifier_fn(self.encoder.transform(x))
         true_label = desired_label
@@ -229,7 +242,7 @@ class AnchorTabularExplainer(object):
             #     self.feature_names[f],
             #     self.categorical_names[f][int(data_row[f])])
 
-        def sample_fn(present, num_samples, compute_labels=True):
+        def sample_fn(present, num_samples, compute_labels=True, validation=True):
             conditions_eq = {}
             conditions_leq = {}
             conditions_geq = {}
@@ -248,7 +261,7 @@ class AnchorTabularExplainer(object):
             # conditions_eq = dict([(x, data_row[x]) for x in present])
             raw_data = self.sample_from_train(
                 conditions_eq, {}, conditions_geq, conditions_leq, num_samples,
-                validation=sample_whole_instances)
+                validation=validation)
             data = np.zeros((num_samples, len(mapping)), int)
             for i in mapping:
                 f, op, v = mapping[i]
@@ -269,12 +282,11 @@ class AnchorTabularExplainer(object):
                           delta=0.1, tau=0.15, batch_size=100,
                           max_anchor_size=None,
                           desired_label=None,
-                          beam_size=4,
-                          sample_whole_instances=True, **kwargs):
+                          beam_size=4, **kwargs):
         # It's possible to pass in max_anchor_size
         sample_fn, mapping = self.get_sample_fn(
-            data_row, classifier_fn, sample_whole_instances,
-            desired_label=desired_label)
+            data_row, classifier_fn, desired_label=desired_label)
+        # return sample_fn, mapping
         exp = anchor_base.AnchorBaseBeam.anchor_beam(
             sample_fn, delta=delta, epsilon=tau, batch_size=batch_size,
             desired_confidence=threshold, max_anchor_size=max_anchor_size,
@@ -323,6 +335,8 @@ class AnchorTabularExplainer(object):
                 geq_val = ''
                 leq_val = ''
                 if geq > float('-inf'):
+                    if geq == len(self.categorical_names[f]) - 1:
+                        geq = geq - 1
                     name = self.categorical_names[f][geq + 1]
                     if '<' in name:
                         geq_val = name.split()[0]
