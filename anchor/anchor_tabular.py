@@ -52,7 +52,7 @@ class AnchorTabularExplainer(object):
         self.categorical_names = categorical_names
 
     def fit(self, train_data, train_labels, validation_data,
-            validation_labels):
+            validation_labels, discretizer='quartile'):
         """
         bla
         """
@@ -65,18 +65,28 @@ class AnchorTabularExplainer(object):
         self.validation_labels = validation_labels
         self.scaler = sklearn.preprocessing.StandardScaler()
         self.scaler.fit(train_data)
-        for f in range(train_data.shape[1]):
-            if f in self.categorical_features:
-                continue
+        if discretizer == 'quartile':
             self.disc = lime.lime_tabular.QuartileDiscretizer(train_data,
                                                          self.categorical_features,
                                                          self.feature_names)
-            val = self.disc.discretize(validation_data)
-            self.categorical_names.update(self.disc.names)
-            self.ordinal_features = [x for x in range(val.shape[1])
-                                if x not in self.categorical_features]
-            self.categorical_features += self.ordinal_features
+        elif discretizer == 'decile':
+            self.disc = lime.lime_tabular.DecileDiscretizer(train_data,
+                                                     self.categorical_features,
+                                                     self.feature_names)
+        else:
+            raise ValueError('Discretizer must be quartile or decile')
 
+        self.d_train = self.disc.discretize(self.train)
+        self.d_validation = self.disc.discretize(self.validation)
+        val = self.disc.discretize(validation_data)
+        self.categorical_names.update(self.disc.names)
+        self.ordinal_features = [x for x in range(val.shape[1])
+                            if x not in self.categorical_features]
+        self.categorical_features += self.ordinal_features
+
+        for f in range(train_data.shape[1]):
+            if f in self.categorical_features and f not in self.ordinal_features:
+                continue
             self.min[f] = np.min(train_data[:, f])
             self.max[f] = np.max(train_data[:, f])
             self.std[f] = np.std(train_data[:, f])
@@ -88,20 +98,22 @@ class AnchorTabularExplainer(object):
         bla
         """
         train = self.train if not validation else self.validation
+        d_train = self.d_train if not validation else self.d_validation
         idx = np.random.choice(range(train.shape[0]), num_samples,
                                replace=True)
         sample = train[idx]
+        d_sample = d_train[idx]
         for f in conditions_eq:
             sample[:, f] = np.repeat(conditions_eq[f], num_samples)
         for f in conditions_geq:
-            idx = sample[:, f] <= conditions_geq[f]
+            idx = d_sample[:, f] <= conditions_geq[f]
             if f in conditions_leq:
-                idx = (idx + (sample[:, f] > conditions_leq[f])).astype(bool)
+                idx = (idx + (d_sample[:, f] > conditions_leq[f])).astype(bool)
             if idx.sum() == 0:
                 continue
-            options = train[:, f] > conditions_geq[f]
+            options = d_train[:, f] > conditions_geq[f]
             if f in conditions_leq:
-                options = options * (train[:, f] <= conditions_leq[f])
+                options = options * (d_train[:, f] <= conditions_leq[f])
             if options.sum() == 0:
                 min_ = conditions_geq.get(f, self.min[f])
                 max_ = conditions_leq.get(f, self.max[f])
@@ -113,10 +125,10 @@ class AnchorTabularExplainer(object):
         for f in conditions_leq:
             if f in conditions_geq:
                 continue
-            idx = sample[:, f] > conditions_leq[f]
+            idx = d_sample[:, f] > conditions_leq[f]
             if idx.sum() == 0:
                 continue
-            options = train[:, f] <= conditions_leq[f]
+            options = d_train[:, f] <= conditions_leq[f]
             if options.sum() == 0:
                 min_ = conditions_geq.get(f, self.min[f])
                 max_ = conditions_leq.get(f, self.max[f])
@@ -225,11 +237,12 @@ class AnchorTabularExplainer(object):
             true_label = predict_fn(data_row.reshape(1, -1))[0]
         # must map present here to include categorical features (for conditions_eq), and numerical features for geq and leq
         mapping = {}
+        data_row = self.disc.discretize(data_row.reshape(1, -1))[0]
         for f in self.categorical_features:
             if f in self.ordinal_features:
                 for v in range(len(self.categorical_names[f])):
                     idx = len(mapping)
-                    if data_row[f] <= v:
+                    if data_row[f] <= v and v != len(self.categorical_names[f]) - 1:
                         mapping[idx] = (f, 'leq', v)
                         # names[idx] = '%s <= %s' % (self.feature_names[f], v)
                     elif data_row[f] > v:
@@ -262,15 +275,16 @@ class AnchorTabularExplainer(object):
             raw_data = self.sample_from_train(
                 conditions_eq, {}, conditions_geq, conditions_leq, num_samples,
                 validation=validation)
+            d_raw_data = self.disc.discretize(raw_data)
             data = np.zeros((num_samples, len(mapping)), int)
             for i in mapping:
                 f, op, v = mapping[i]
                 if op == 'eq':
-                    data[:, i] = (raw_data[:, f] == data_row[f]).astype(int)
+                    data[:, i] = (d_raw_data[:, f] == data_row[f]).astype(int)
                 if op == 'leq':
-                    data[:, i] = (raw_data[:, f] <= v).astype(int)
+                    data[:, i] = (d_raw_data[:, f] <= v).astype(int)
                 if op == 'geq':
-                    data[:, i] = (raw_data[:, f] > v).astype(int)
+                    data[:, i] = (d_raw_data[:, f] > v).astype(int)
             # data = (raw_data == data_row).astype(int)
             labels = []
             if compute_labels:
