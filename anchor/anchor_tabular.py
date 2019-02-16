@@ -23,67 +23,59 @@ class AnchorTabularExplainer(object):
     Args:
         class_names: list of strings
         feature_names: list of strings
-        data: used to build one hot encoder
+        data: used to fit feature pre-processor
         categorical_names: map from integer to list of strings, names for each
             value of the categorical features. Every feature that is not in
             this map will be considered as ordinal, and thus discretized.
-        ordinal_features: list of integers, features that were
+        encoder: feature preprocessing function with 'fit' and 'transform' methods
     """
-    def __init__(self, class_names, feature_names, data=None,
-                 categorical_names=None, ordinal_features=[]):
-        self.encoder = collections.namedtuple('random_name',
-                                              ['transform'])(lambda x: x)
-        self.disc = collections.namedtuple('random_name2',
-                                              ['discretize'])(lambda x: x)
-        self.categorical_features = []
-        if categorical_names:
-            # TODO: Check if this n_values is correct!!
-            cat_names = sorted(categorical_names.keys())
-            n_values = [len(categorical_names[i]) for i in cat_names]
-            self.encoder = sklearn.preprocessing.OneHotEncoder(
-                categorical_features=cat_names,
-                n_values=n_values)
+    def __init__(self, class_names, feature_names, data=None, 
+                 categorical_names=None, encoder=None):
+        
+        if encoder: # assign and fit feature preprocessing function
+            self.encoder = encoder
             self.encoder.fit(data)
-            self.categorical_features = self.encoder.categorical_features
-        if len(ordinal_features) == 0:
-            self.ordinal_features = [x for x in range(len(feature_names)) if x not in self.categorical_features]
+        else:
+            self.encoder = collections.namedtuple('encoder',['transform'])(lambda x: x)
+        
+        self.categorical_features = sorted(categorical_names.keys())
+        self.ordinal_features = [x for x in range(len(feature_names)) if x not in self.categorical_features]
+        
         self.feature_names = feature_names
         self.class_names = class_names
         self.categorical_names = categorical_names
-
-    def fit(self, train_data, train_labels, validation_data,
+        
+    
+    def fit(self, train_data, train_labels, validation_data, 
             validation_labels, discretizer='quartile'):
         """
-        bla
+        Apply discretization to ordinal features.
         """
-        self.min = {}
-        self.max = {}
-        self.std = {}
         self.train = train_data
         self.train_labels = train_labels
         self.validation = validation_data
         self.validation_labels = validation_labels
-        self.scaler = sklearn.preprocessing.StandardScaler()
-        self.scaler.fit(train_data)
+        
+        # quartile or decile discretization of ordinal features
+        args = [train_data, self.categorical_features, self.feature_names]
         if discretizer == 'quartile':
-            self.disc = lime.lime_tabular.QuartileDiscretizer(train_data,
-                                                         self.categorical_features,
-                                                         self.feature_names)
+            self.disc = lime.lime_tabular.QuartileDiscretizer(*args)
         elif discretizer == 'decile':
-            self.disc = lime.lime_tabular.DecileDiscretizer(train_data,
-                                                     self.categorical_features,
-                                                     self.feature_names)
+            self.disc = lime.lime_tabular.DecileDiscretizer(*args)
         else:
             raise ValueError('Discretizer must be quartile or decile')
-
+        
         self.d_train = self.disc.discretize(self.train)
         self.d_validation = self.disc.discretize(self.validation)
-        val = self.disc.discretize(validation_data)
+        
+        # add discretized ordinal features to categorical features
         self.categorical_names.update(self.disc.names)
-        self.ordinal_features = [x for x in range(val.shape[1])
-                            if x not in self.categorical_features]
         self.categorical_features += self.ordinal_features
-
+        
+        # calculate min, max and std for ordinal features in training data
+        self.min = {}
+        self.max = {}
+        self.std = {}
         for f in range(train_data.shape[1]):
             if f in self.categorical_features and f not in self.ordinal_features:
                 continue
