@@ -25,20 +25,22 @@ def id_generator(size=15):
 
 class AnchorText(object):
     """bla"""
-    def __init__(self, nlp, class_names, use_unk_distribution=True):
+    def __init__(self, nlp, class_names, use_unk_distribution=True, mask_string='UNK'):
         """
         Args:
             nlp: spacy object
             class_names: list of strings
             use_unk_distribution: if True, the perturbation distribution
-                will just replace words randomly with UNKs.
+                will just replace words randomly with mask_string.
                 If False, words will be replaced by similar words using word
                 embeddings
+            mask_string: String used to mask tokens if use_unk_distribution is True.
         """
         self.nlp = nlp
         self.class_names = class_names
         self.neighbors = utils.Neighbors(self.nlp)
         self.use_unk_distribution = use_unk_distribution
+        self.mask_string = mask_string
 
     def get_sample_fn(self, text, classifier_fn, use_proba=False):
         true_label = classifier_fn([text])[0]
@@ -57,7 +59,7 @@ class AnchorText(object):
                     n_changed = np.random.binomial(num_samples, .5)
                     changed = np.random.choice(num_samples, n_changed,
                                                replace=False)
-                    raw[changed, i] = 'UNK'
+                    raw[changed, i] = self.mask_string
                     data[changed, i] = 0
                 if (sys.version_info > (3, 0)):
                     raw_data = [' '.join([y.decode() for y in x]) for x in raw]
