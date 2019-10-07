@@ -45,6 +45,8 @@ class AnchorTabularExplainer(object):
                 n_values=n_values)
             self.encoder.fit(data)
             self.categorical_features = self.encoder.categorical_features
+        else:
+            categorical_names = {}
         if len(ordinal_features) == 0:
             self.ordinal_features = [x for x in range(len(feature_names)) if x not in self.categorical_features]
         self.feature_names = feature_names
