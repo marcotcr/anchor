@@ -366,7 +366,7 @@ def perturb_sentence(text, present, n, neighbors, proba_change=0.5,
     pos = set(pos)
     raw = np.zeros((n, len(tokens)), '|S80')
     data = np.ones((n, len(tokens)))
-    raw[:] = [x.text for x in tokens]
+    raw[:] = [x.text.encode('utf-8') for x in tokens]
     for i, t in enumerate(tokens):
         if i in present:
             continue
