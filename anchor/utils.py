@@ -395,9 +395,15 @@ def perturb_sentence(text, present, n, neighbors, proba_change=0.5,
                 if t.text in t_neighbors:
                     idx = t_neighbors.index(t.text)
                     weights[idx] = 0
-                weights = weights / sum(weights)
-                raw[changed, i] = np.random.choice(t_neighbors, n_changed, p=weights)
-                data[changed, i] = 0
+                if any(weights) != 0.:
+                    weights = weights / sum(weights)
+                    raw[changed, i] = np.random.choice(t_neighbors, n_changed, p=weights)
+                    data[changed, i] = 0
+                else:
+                    # defaulting to uniform dist for zero vectors, where all similarity is 0.
+                    raw[changed, i] = np.random.choice(t_neighbors, n_changed)
+                    data[changed, i] = 0
+
 #         else:
 #             print t.text, t.pos_ in pos, t.lemma_ in forbidden, t.tag_ in forbidden_tags, t.text in neighbors
     # print raw
@@ -406,3 +412,73 @@ def perturb_sentence(text, present, n, neighbors, proba_change=0.5,
     else:
         raw = [' '.join(x) for x in raw]
     return raw, data
+
+
+def greedy_pick_anchor(explanations, data, word2idx, k=5, threshold=1, unk='<unk>'):
+    covered = {}
+    n = float(data.shape[0])  # number of instances
+    for i, (exp, d) in enumerate(zip(explanations, data)):
+        fs = []
+        for f, precision in zip(exp.names(), exp.precision()):
+            try:
+                f = word2idx[f]
+            except KeyError:
+                f = word2idx[unk]
+            fs.append(f)
+            if precision >= threshold:
+                break
+        fs = np.array(fs)
+        if fs.shape[0] == 0:
+            fs = np.array([exp.features()[0]])
+        covered[i] = set(
+            np.all(data[:, fs] == d[fs], axis=1).nonzero()[0]) # num of instances in the current dataset where the feature set (of exps) have the same value as in the current instance. So for text, it will be all the texts which contain the explanation words.
+    chosen = []
+    all_covered = set()
+    for i in range(k):
+        best = (-1, -1)
+        for j in covered:
+            gain = len(all_covered.union(covered[j]))
+            if gain > best[1]:
+                best = (j, gain)
+        all_covered = all_covered.union(covered[best[0]])
+        print(i, best[1] / n)
+        chosen.append(best[0])
+    return chosen
+
+
+def evaluate_anchor(explanations, explanations_data, explanation_preds,
+                    dataset, predictions, threshold=1):
+    covered = {}
+    n = float(dataset.shape[0])
+    for i, (exp, d) in enumerate(zip(explanations, explanations_data)):
+        fs = []
+        for f, p in zip(exp['feature'], exp['precision']):
+            fs.append(f)
+            if p >= threshold:
+                break
+        fs = np.array(fs)
+        covered[i] = set(
+            np.all(dataset[:, fs] == d[fs], axis=1).nonzero()[0])
+    # exp_range = range(len(explanations))
+    n = float(dataset.shape[0])
+    return precision_support_from_covered(n, covered, explanation_preds,
+                                          predictions)
+
+
+def precision_support_from_covered(n, covered, explanation_preds, predictions):
+    predicted = 0.0
+    predicted_right = 0.0
+    for i in range(int(n)):
+        votes = []
+        for j in covered:
+            if i in covered[j]:
+                votes.append(explanation_preds[j])
+        if votes:
+            predicted += 1
+            if np.random.choice(votes) == predictions[i]:
+                predicted_right += 1
+    if predicted == 0:
+        return 1, 0
+    precision = predicted_right / predicted
+    support = predicted / n
+    return precision, support
