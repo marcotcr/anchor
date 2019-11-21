@@ -395,9 +395,15 @@ def perturb_sentence(text, present, n, neighbors, proba_change=0.5,
                 if t.text in t_neighbors:
                     idx = t_neighbors.index(t.text)
                     weights[idx] = 0
-                weights = weights / sum(weights)
-                raw[changed, i] = np.random.choice(t_neighbors, n_changed, p=weights)
-                data[changed, i] = 0
+                if any(weights) != 0.:
+                    weights = weights / sum(weights)
+                    raw[changed, i] = np.random.choice(t_neighbors, n_changed, p=weights)
+                    data[changed, i] = 0
+                else:
+                    # defaulting to uniform dist for zero vectors, where all similarity is 0.
+                    raw[changed, i] = np.random.choice(t_neighbors, n_changed)
+                    data[changed, i] = 0
+
 #         else:
 #             print t.text, t.pos_ in pos, t.lemma_ in forbidden, t.tag_ in forbidden_tags, t.text in neighbors
     # print raw
