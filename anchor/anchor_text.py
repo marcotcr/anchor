@@ -52,7 +52,7 @@ class AnchorText(object):
             if self.use_unk_distribution:
                 data = np.ones((num_samples, len(words)))
                 raw = np.zeros((num_samples, len(words)), '|S80')
-                raw[:] = words
+                raw[:] = [x.encode('utf-8') for x in words]
                 for i, t in enumerate(words):
                     if i in present:
                         continue
