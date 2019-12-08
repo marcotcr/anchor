@@ -414,12 +414,15 @@ def perturb_sentence(text, present, n, neighbors, proba_change=0.5,
     return raw, data
 
 
-def greedy_pick_anchor(explanations, data, word2idx, k=5, threshold=1, unk='<unk>'):
+def greedy_pick_anchor(exp_names, exp_precs, data, word2idx, k=5, threshold=1, unk='<unk>'):
     covered = {}
     n = float(data.shape[0])  # number of instances
-    for i, (exp, d) in enumerate(zip(explanations, data)):
+    for i, (exp_name, exp_prec, d) in enumerate(zip(exp_names, exp_precs, data)):
+        if len(exp_name) == 0:
+            covered[i] = set()
+            continue
         fs = []
-        for f, precision in zip(exp.names(), exp.precision()):
+        for f, precision in zip(exp_name, exp_prec):
             try:
                 f = word2idx[f]
             except KeyError:
@@ -428,8 +431,8 @@ def greedy_pick_anchor(explanations, data, word2idx, k=5, threshold=1, unk='<unk
             if precision >= threshold:
                 break
         fs = np.array(fs)
-        if fs.shape[0] == 0:
-            fs = np.array([exp.features()[0]])
+        # if fs.shape[0] == 0:
+        #     fs = np.array([exp.features()[0]])
         covered[i] = set(
             np.all(data[:, fs] == d[fs], axis=1).nonzero()[0]) # num of instances in the current dataset where the feature set (of exps) have the same value as in the current instance. So for text, it will be all the texts which contain the explanation words.
     chosen = []
@@ -446,13 +449,17 @@ def greedy_pick_anchor(explanations, data, word2idx, k=5, threshold=1, unk='<unk
     return chosen
 
 
-def evaluate_anchor(explanations, explanations_data, explanation_preds,
-                    dataset, predictions, threshold=1):
+def evaluate_anchor(explanation_names, explanation_precs, explanations_data, word2idx, explanation_preds,
+                    dataset, predictions, threshold=1, unk='<unk>'):
     covered = {}
     n = float(dataset.shape[0])
-    for i, (exp, d) in enumerate(zip(explanations, explanations_data)):
+    for i, (exp_name, exp_prec, d) in enumerate(zip(explanation_names, explanation_precs, explanations_data)):
         fs = []
-        for f, p in zip(exp['feature'], exp['precision']):
+        for f, p in zip(exp_name, exp_prec):
+            try:
+                f = word2idx[f]
+            except KeyError:
+                f = word2idx[unk]
             fs.append(f)
             if p >= threshold:
                 break
