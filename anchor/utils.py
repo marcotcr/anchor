@@ -267,7 +267,7 @@ def load_csv_dataset(data, target_idx, delimiter=',',
         data = disc.discretize(data)
         ordinal_features = [x for x in range(data.shape[1])
                             if x not in categorical_features]
-        categorical_features = range(data.shape[1])
+        categorical_features = list(range(data.shape[1]))
         categorical_names.update(disc.names)
     for x in categorical_names:
         categorical_names[x] = [y.decode() if type(y) == np.bytes_ else y for y in categorical_names[x]]
