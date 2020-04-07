@@ -11,7 +11,7 @@ At the moment, we support explaining individual predictions for text classifiers
 The anchor method is able to explain any black box classifier, with two or more classes. All we require is that the classifier implements a function that takes in raw text or a numpy array and outputs a prediction (integer)
 
 ## Installation
-The lime package is on pypi. Simply run:
+The Anchor package is on pypi. Simply run:
 
     pip install anchor_exp
 Or clone the repository and run:
@@ -22,7 +22,7 @@ Or clone the repository and run:
 See notebooks folder for tutorials.
 
 - [Tabular data](https://github.com/marcotcr/anchor/blob/master/notebooks/Anchor%20on%20tabular%20data.ipynb)
-- [Text data](https://github.com/marcotcr/anchor/blob/master/notebooks/Anchor%20for%20text.ipynb)
+- [Text data](https://github.com/marcotcr/anchor/blob/master/notebooks/Anchor%20for%20text.ipynb) - see also [this version](https://colab.research.google.com/drive/1QuWpE86ghWpDMdTtlk7sFmJZNY9NGz0S) on colab (thanks to [Sam Havens](https://github.com/samhavens)), which downloads the data.
 
 ## Citation
 [Here](https://homes.cs.washington.edu/~marcotcr/aaai18.bib) is the bibtex if you want to cite this work.

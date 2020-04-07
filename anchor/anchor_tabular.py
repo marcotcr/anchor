@@ -29,7 +29,7 @@ class AnchorTabularExplainer(object):
             this map will be considered as ordinal or continuous, and thus discretized.
     """
     def __init__(self, class_names, feature_names, train_data,
-                 categorical_names=None, discretizer='quartile', encoder_fn=None):
+                 categorical_names={}, discretizer='quartile', encoder_fn=None):
         self.min = {}
         self.max = {}
         self.disc = collections.namedtuple('random_name2',

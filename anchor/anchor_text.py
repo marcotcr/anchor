@@ -100,15 +100,16 @@ class SentencePerturber:
 
 class AnchorText(object):
     """bla"""
-    def __init__(self, nlp, class_names, use_unk_distribution=True, use_bert=True):
+    def __init__(self, nlp, class_names, use_unk_distribution=True, use_bert=True, mask_string='UNK'):
         """
         Args:
             nlp: spacy object
             class_names: list of strings
             use_unk_distribution: if True, the perturbation distribution
-                will just replace words randomly with UNKs.
+                will just replace words randomly with mask_string.
                 If False, words will be replaced by similar words using word
                 embeddings
+            mask_string: String used to mask tokens if use_unk_distribution is True.
         """
         self.nlp = nlp
         self.class_names = class_names
@@ -116,6 +117,7 @@ class AnchorText(object):
         self.tg = None
         self.use_bert = use_bert
         self.neighbors = utils.Neighbors(self.nlp)
+        self.mask_string = mask_string
         if not self.use_unk_distribution and self.use_bert:
             self.tg = TextGenerator()
 
@@ -139,7 +141,7 @@ class AnchorText(object):
                     n_changed = np.random.binomial(num_samples, .5)
                     changed = np.random.choice(num_samples, n_changed,
                                                replace=False)
-                    raw[changed, i] = 'UNK'
+                    raw[changed, i] = self.mask_string
                     data[changed, i] = 0
                 raw_data = [' '.join(x) for x in raw]
             else:

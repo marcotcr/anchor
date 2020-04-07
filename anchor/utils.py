@@ -385,7 +385,8 @@ def perturb_sentence(text, present, n, neighbors, proba_change=0.5,
                 # print sorted(zip(t_neighbors, weights), key=lambda x:x[1], reverse=True)[:10]
                 raw[:, i] = np.random.choice(t_neighbors, n,  p=weights,
                                              replace=True)
-                data[:, i] = raw[:, i] == t.text
+                # The type of data in raw is byte.
+                data[:, i] = raw[:, i] == t.text.encode()
             else:
                 n_changed = np.random.binomial(n, proba_change)
                 changed = np.random.choice(n, n_changed, replace=False)
