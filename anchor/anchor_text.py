@@ -7,8 +7,6 @@ import os
 import string
 import sys
 from io import open
-from transformers import DistilBertTokenizer, DistilBertForMaskedLM
-import torch
 import numpy as np
 
 def id_generator(size=15):
@@ -24,6 +22,9 @@ def exp_normalize(x):
 
 class TextGenerator(object):
     def __init__(self, url=None):
+        from transformers import DistilBertTokenizer, DistilBertForMaskedLM
+        import torch
+        self.torch = torch
         self.url = url
         if url is None:
             self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -33,6 +34,7 @@ class TextGenerator(object):
             self.bert.eval()
 
     def unmask(self, text_with_mask):
+        torch = self.torch
         tokenizer = self.bert_tokenizer
         model = self.bert
         encoded = np.array(tokenizer.encode(text_with_mask, add_special_tokens=True))
@@ -84,7 +86,7 @@ class SentencePerturber:
         if s not in self.cache:
             r = self.tg.unmask(s)
             self.cache[s] = [(a, exp_normalize(b)) for a, b in r]
-            if self.onepass:
+            if not self.onepass:
                 self.cache[s] = self.cache[s][:1]
         return self.cache[s]
 

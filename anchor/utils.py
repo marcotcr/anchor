@@ -9,10 +9,6 @@ import lime.lime_tabular
 import os
 import sys
 
-if (sys.version_info > (3, 0)):
-    def unicode(s, errors=None):
-        return s#str(s)
-
 class Bunch(object):
     """bla"""
     def __init__(self, adict):
@@ -321,6 +317,8 @@ class Neighbors:
     def __init__(self, nlp_obj):
         self.nlp = nlp_obj
         self.to_check = [w for w in self.nlp.vocab if w.prob >= -15 and w.has_vector]
+        if not self.to_check:
+            raise Exception('No vectors. Are you using en_core_web_sm? It should be en_core_web_lg')
         self.n = {}
 
     def neighbors(self, word):
@@ -345,7 +343,7 @@ class Neighbors:
 def perturb_sentence(text, present, n, neighbors, proba_change=0.5,
                      top_n=50, forbidden=[], forbidden_tags=['PRP$'],
                      forbidden_words=['be'],
-                     pos=['NOUN', 'VERB', 'ADJ', 'ADV', 'ADP', 'DET'], use_proba=True,
+                     pos=['NOUN', 'VERB', 'ADJ', 'ADV', 'ADP', 'DET', 'PART'], use_proba=True,
                      temperature=.4):
     # words is a list of words (must be unicode)
     # present is which ones must be present, also a list
@@ -357,7 +355,7 @@ def perturb_sentence(text, present, n, neighbors, proba_change=0.5,
     # forbidden_tags, words: self explanatory
     # pos: which POS to change
 
-    tokens = neighbors.nlp(unicode(text))
+    tokens = neighbors.nlp(text)
     # print [x.pos_ for x in tokens]
     eligible = []
     forbidden = set(forbidden)
@@ -373,7 +371,7 @@ def perturb_sentence(text, present, n, neighbors, proba_change=0.5,
         if (t.text not in forbidden_words and t.pos_ in pos and
                 t.lemma_ not in forbidden and t.tag_ not in forbidden_tags):
             r_neighbors = [
-                (unicode(x[0].text.encode('utf-8'), errors='ignore'), x[1])
+                (x[0].text, x[1])
                 for x in neighbors.neighbors(t.text)
                 if x[0].tag_ == t.tag_][:top_n]
             if not r_neighbors:
