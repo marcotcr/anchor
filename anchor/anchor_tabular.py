@@ -23,48 +23,28 @@ class AnchorTabularExplainer(object):
     Args:
         class_names: list of strings
         feature_names: list of strings
-        data: used to build one hot encoder
+        train_data: used to sample (bootstrap)
         categorical_names: map from integer to list of strings, names for each
             value of the categorical features. Every feature that is not in
-            this map will be considered as ordinal, and thus discretized.
-        ordinal_features: list of integers, features that were
+            this map will be considered as ordinal or continuous, and thus discretized.
     """
-    def __init__(self, class_names, feature_names, data=None,
-                 categorical_names=None, ordinal_features=[]):
-        self.encoder = collections.namedtuple('random_name',
-                                              ['transform'])(lambda x: x)
-        self.disc = collections.namedtuple('random_name2',
-                                              ['discretize'])(lambda x: x)
-        self.categorical_features = []
-        if categorical_names:
-            # TODO: Check if this n_values is correct!!
-            cat_names = sorted(categorical_names.keys())
-            n_values = [len(categorical_names[i]) for i in cat_names]
-            self.encoder = sklearn.preprocessing.OneHotEncoder(
-                categorical_features=cat_names,
-                n_values=n_values)
-            self.encoder.fit(data)
-            self.categorical_features = self.encoder.categorical_features
-        if len(ordinal_features) == 0:
-            self.ordinal_features = [x for x in range(len(feature_names)) if x not in self.categorical_features]
-        self.feature_names = feature_names
-        self.class_names = class_names
-        self.categorical_names = categorical_names
-
-    def fit(self, train_data, train_labels, validation_data,
-            validation_labels, discretizer='quartile'):
-        """
-        bla
-        """
+    def __init__(self, class_names, feature_names, train_data,
+                 categorical_names={}, discretizer='quartile', encoder_fn=None):
         self.min = {}
         self.max = {}
-        self.std = {}
+        self.disc = collections.namedtuple('random_name2',
+                                              ['discretize'])(lambda x: x)
+        self.encoder_fn = lambda x: x
+        if encoder_fn is not None:
+            self.encoder_fn = encoder_fn
+        self.categorical_features = []
+        self.feature_names = feature_names
         self.train = train_data
-        self.train_labels = train_labels
-        self.validation = validation_data
-        self.validation_labels = validation_labels
-        self.scaler = sklearn.preprocessing.StandardScaler()
-        self.scaler.fit(train_data)
+        self.class_names = class_names
+        self.categorical_names = categorical_names
+        if categorical_names:
+            self.categorical_features = sorted(categorical_names.keys())
+
         if discretizer == 'quartile':
             self.disc = lime.lime_tabular.QuartileDiscretizer(train_data,
                                                          self.categorical_features,
@@ -76,29 +56,24 @@ class AnchorTabularExplainer(object):
         else:
             raise ValueError('Discretizer must be quartile or decile')
 
+        self.ordinal_features = [x for x in range(len(feature_names)) if x not in self.categorical_features]
+
         self.d_train = self.disc.discretize(self.train)
-        self.d_validation = self.disc.discretize(self.validation)
-        val = self.disc.discretize(validation_data)
         self.categorical_names.update(self.disc.names)
-        self.ordinal_features = [x for x in range(val.shape[1])
-                            if x not in self.categorical_features]
         self.categorical_features += self.ordinal_features
 
         for f in range(train_data.shape[1]):
-            if f in self.categorical_features and f not in self.ordinal_features:
-                continue
             self.min[f] = np.min(train_data[:, f])
             self.max[f] = np.max(train_data[:, f])
-            self.std[f] = np.std(train_data[:, f])
 
 
     def sample_from_train(self, conditions_eq, conditions_neq, conditions_geq,
-                          conditions_leq, num_samples, validation=True):
+                          conditions_leq, num_samples):
         """
         bla
         """
-        train = self.train if not validation else self.validation
-        d_train = self.d_train if not validation else self.d_validation
+        train = self.train
+        d_train = self.d_train
         idx = np.random.choice(range(train.shape[0]), num_samples,
                                replace=True)
         sample = train[idx]
@@ -231,7 +206,7 @@ class AnchorTabularExplainer(object):
 
     def get_sample_fn(self, data_row, classifier_fn, desired_label=None):
         def predict_fn(x):
-            return classifier_fn(self.encoder.transform(x))
+            return classifier_fn(self.encoder_fn(x))
         true_label = desired_label
         if true_label is None:
             true_label = predict_fn(data_row.reshape(1, -1))[0]
@@ -255,7 +230,7 @@ class AnchorTabularExplainer(object):
             #     self.feature_names[f],
             #     self.categorical_names[f][int(data_row[f])])
 
-        def sample_fn(present, num_samples, compute_labels=True, validation=True):
+        def sample_fn(present, num_samples, compute_labels=True):
             conditions_eq = {}
             conditions_leq = {}
             conditions_geq = {}
@@ -273,8 +248,7 @@ class AnchorTabularExplainer(object):
                     conditions_geq[f] = max(conditions_geq[f], v)
             # conditions_eq = dict([(x, data_row[x]) for x in present])
             raw_data = self.sample_from_train(
-                conditions_eq, {}, conditions_geq, conditions_leq, num_samples,
-                validation=validation)
+                conditions_eq, {}, conditions_geq, conditions_leq, num_samples)
             d_raw_data = self.disc.discretize(raw_data)
             data = np.zeros((num_samples, len(mapping)), int)
             for i in mapping:
@@ -307,7 +281,7 @@ class AnchorTabularExplainer(object):
             **kwargs)
         self.add_names_to_exp(data_row, exp, mapping)
         exp['instance'] = data_row
-        exp['prediction'] = classifier_fn(self.encoder.transform(data_row.reshape(1, -1)))[0]
+        exp['prediction'] = classifier_fn(self.encoder_fn(data_row.reshape(1, -1)))[0]
         explanation = anchor_explanation.AnchorExplanation('tabular', exp, self.as_html)
         return explanation
 

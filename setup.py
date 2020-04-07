@@ -8,13 +8,13 @@ setup(name='anchor_exp',
       author_email='marcotcr@gmail.com',
       license='BSD',
       packages=['anchor'],
+      python_requires='>=3.5',
       install_requires=[
           'numpy',
           'scipy',
           'spacy',
           'lime',
-          'scikit-learn'
+          'scikit-learn>=0.22'
       ],
       include_package_data=True,
       zip_safe=False)
-

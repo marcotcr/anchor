@@ -9,10 +9,6 @@ import lime.lime_tabular
 import os
 import sys
 
-if (sys.version_info > (3, 0)):
-    def unicode(s, errors=None):
-        return s#str(s)
-
 class Bunch(object):
     """bla"""
     def __init__(self, adict):
@@ -267,7 +263,7 @@ def load_csv_dataset(data, target_idx, delimiter=',',
         data = disc.discretize(data)
         ordinal_features = [x for x in range(data.shape[1])
                             if x not in categorical_features]
-        categorical_features = range(data.shape[1])
+        categorical_features = list(range(data.shape[1]))
         categorical_names.update(disc.names)
     for x in categorical_names:
         categorical_names[x] = [y.decode() if type(y) == np.bytes_ else y for y in categorical_names[x]]
@@ -320,17 +316,19 @@ def load_csv_dataset(data, target_idx, delimiter=',',
 class Neighbors:
     def __init__(self, nlp_obj):
         self.nlp = nlp_obj
-        self.to_check = [w for w in self.nlp.vocab if w.prob >= -15]
+        self.to_check = [w for w in self.nlp.vocab if w.prob >= -15 and w.has_vector]
+        if not self.to_check:
+            raise Exception('No vectors. Are you using en_core_web_sm? It should be en_core_web_lg')
         self.n = {}
 
     def neighbors(self, word):
-        word = unicode(word)
+        word = word
         orig_word = word
         if word not in self.n:
-            if word not in self.nlp.vocab:
+            if word not in self.nlp.vocab.strings:
                 self.n[word] = []
             else:
-                word = self.nlp.vocab[unicode(word)]
+                word = self.nlp.vocab[word]
                 queries = [w for w in self.to_check
                             if w.is_lower == word.is_lower]
                 if word.prob < -15:
@@ -345,7 +343,7 @@ class Neighbors:
 def perturb_sentence(text, present, n, neighbors, proba_change=0.5,
                      top_n=50, forbidden=[], forbidden_tags=['PRP$'],
                      forbidden_words=['be'],
-                     pos=['NOUN', 'VERB', 'ADJ', 'ADV', 'ADP', 'DET'], use_proba=True,
+                     pos=['NOUN', 'VERB', 'ADJ', 'ADV', 'ADP', 'DET', 'PART'], use_proba=True,
                      temperature=.4):
     # words is a list of words (must be unicode)
     # present is which ones must be present, also a list
@@ -357,14 +355,14 @@ def perturb_sentence(text, present, n, neighbors, proba_change=0.5,
     # forbidden_tags, words: self explanatory
     # pos: which POS to change
 
-    tokens = neighbors.nlp(unicode(text))
+    tokens = neighbors.nlp(text)
     # print [x.pos_ for x in tokens]
     eligible = []
     forbidden = set(forbidden)
     forbidden_tags = set(forbidden_tags)
     forbidden_words = set(forbidden_words)
     pos = set(pos)
-    raw = np.zeros((n, len(tokens)), '|S80')
+    raw = np.zeros((n, len(tokens)), '|U80')
     data = np.ones((n, len(tokens)))
     raw[:] = [x.text for x in tokens]
     for i, t in enumerate(tokens):
@@ -373,7 +371,7 @@ def perturb_sentence(text, present, n, neighbors, proba_change=0.5,
         if (t.text not in forbidden_words and t.pos_ in pos and
                 t.lemma_ not in forbidden and t.tag_ not in forbidden_tags):
             r_neighbors = [
-                (unicode(x[0].text.encode('utf-8'), errors='ignore'), x[1])
+                (x[0].text, x[1])
                 for x in neighbors.neighbors(t.text)
                 if x[0].tag_ == t.tag_][:top_n]
             if not r_neighbors:
@@ -401,8 +399,5 @@ def perturb_sentence(text, present, n, neighbors, proba_change=0.5,
 #         else:
 #             print t.text, t.pos_ in pos, t.lemma_ in forbidden, t.tag_ in forbidden_tags, t.text in neighbors
     # print raw
-    if (sys.version_info > (3, 0)):
-        raw = [' '.join([y.decode() for y in x]) for x in raw]
-    else:
-        raw = [' '.join(x) for x in raw]
+    raw = [' '.join(x) for x in raw]
     return raw, data
