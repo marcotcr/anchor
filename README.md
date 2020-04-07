@@ -18,11 +18,20 @@ Or clone the repository and run:
 
     python setup.py install
 
+If you want to use `AnchorTextExplainer`, you have to run the following:
+
+    python -m spacy download en_core_web_lg
+
+And if you want to use BERT to perturb inputs (recommended), also install transformers:
+
+    pip install torch transformers spacy && python -m spacy download en_core_web_sm
+
+
 #### Examples
-See notebooks folder for tutorials.
+See notebooks folder for tutorials. Note that from version 0.0.1.0, it only works on python 3.
 
 - [Tabular data](https://github.com/marcotcr/anchor/blob/master/notebooks/Anchor%20on%20tabular%20data.ipynb)
-- [Text data](https://github.com/marcotcr/anchor/blob/master/notebooks/Anchor%20for%20text.ipynb) - see also [this version](https://colab.research.google.com/drive/1QuWpE86ghWpDMdTtlk7sFmJZNY9NGz0S) on colab (thanks to [Sam Havens](https://github.com/samhavens)), which downloads the data.
+- [Text data](https://github.com/marcotcr/anchor/blob/master/notebooks/Anchor%20for%20text.ipynb) 
 
 ## Citation
 [Here](https://homes.cs.washington.edu/~marcotcr/aaai18.bib) is the bibtex if you want to cite this work.
