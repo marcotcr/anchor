@@ -327,6 +327,8 @@ class Neighbors:
         if word not in self.n:
             if word not in self.nlp.vocab.strings:
                 self.n[word] = []
+            elif not self.nlp.vocab[word].has_vector:
+                self.n[word] = []
             else:
                 word = self.nlp.vocab[word]
                 queries = [w for w in self.to_check
