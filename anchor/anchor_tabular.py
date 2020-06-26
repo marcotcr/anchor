@@ -41,7 +41,7 @@ class AnchorTabularExplainer(object):
         self.feature_names = feature_names
         self.train = train_data
         self.class_names = class_names
-        self.categorical_names = categorical_names
+        self.categorical_names = copy.deepcopy(categorical_names)
         if categorical_names:
             self.categorical_features = sorted(categorical_names.keys())
 

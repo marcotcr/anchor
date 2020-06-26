@@ -13,7 +13,7 @@ The anchor method is able to explain any black box classifier, with two or more 
 ## Installation
 The Anchor package is on pypi. Simply run:
 
-    pip install anchor_exp
+    pip install anchor-exp
 Or clone the repository and run:
 
     python setup.py install
@@ -31,7 +31,7 @@ And if you want to use BERT to perturb inputs (recommended), also install transf
 See notebooks folder for tutorials. Note that from version 0.0.1.0, it only works on python 3.
 
 - [Tabular data](https://github.com/marcotcr/anchor/blob/master/notebooks/Anchor%20on%20tabular%20data.ipynb)
-- [Text data](https://github.com/marcotcr/anchor/blob/master/notebooks/Anchor%20for%20text.ipynb) 
+- [Text data](https://github.com/marcotcr/anchor/blob/master/notebooks/Anchor%20for%20text.ipynb)
 
 ## Citation
 [Here](https://homes.cs.washington.edu/~marcotcr/aaai18.bib) is the bibtex if you want to cite this work.
