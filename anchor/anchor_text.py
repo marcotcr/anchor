@@ -166,7 +166,9 @@ class AnchorText(object):
             if compute_labels:
                 labels = (classifier_fn(raw_data) == true_label).astype(int)
             labels = np.array(labels)
-            raw_data = np.array(raw_data, '|U80').reshape(-1, 1)
+            max_len = max([len(x) for x in raw_data])
+            dtype = '|U%d' % (max(80, max_len))
+            raw_data = np.array(raw_data, dtype).reshape(-1, 1)
             return raw_data, data, labels
         return words, positions, true_label, sample_fn
 
