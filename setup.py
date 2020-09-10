@@ -1,7 +1,7 @@
 from setuptools import setup
 
 setup(name='anchor_exp',
-      version='0.0.1.1',
+      version='0.0.1.2',
       description='Anchor explanations for machine learning models',
       url='http://github.com/marcotcr/anchor',
       author='Marco Tulio Ribeiro',
