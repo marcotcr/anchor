@@ -100,7 +100,7 @@ class SentencePerturber:
 
 class AnchorText(object):
     """bla"""
-    def __init__(self, nlp, class_names, use_unk_distribution=True, use_bert=True, mask_string='UNK'):
+    def __init__(self, nlp, class_names, use_unk_distribution=True, mask_string='UNK'):
         """
         Args:
             nlp: spacy object
@@ -115,10 +115,8 @@ class AnchorText(object):
         self.class_names = class_names
         self.use_unk_distribution = use_unk_distribution
         self.tg = None
-        self.use_bert = use_bert
-        self.neighbors = utils.Neighbors(self.nlp)
         self.mask_string = mask_string
-        if not self.use_unk_distribution and self.use_bert:
+        if not self.use_unk_distribution:
             self.tg = TextGenerator()
 
     def get_sample_fn(self, text, classifier_fn, onepass=False, use_proba=False):
@@ -128,7 +126,7 @@ class AnchorText(object):
         positions = [x.idx for x in processed]
         # positions = list(range(len(words)))
         perturber = None
-        if not self.use_unk_distribution and self.use_bert:
+        if not self.use_unk_distribution:
             perturber = SentencePerturber(words, self.tg, onepass=onepass)
         def sample_fn(present, num_samples, compute_labels=True):
             if self.use_unk_distribution:
@@ -145,23 +143,18 @@ class AnchorText(object):
                     data[changed, i] = 0
                 raw_data = [' '.join(x) for x in raw]
             else:
-                if self.use_bert:
-                    data = np.zeros((num_samples, len(words)))
-                    for i in range(len(words)):
-                        if i in present:
-                            continue
-                        probs = [1 - perturber.pr[i], perturber.pr[i]]
-                        data[:, i] = np.random.choice([0, 1], num_samples, p=probs)
-                    data[:, present] = 1
-                    raw_data = []
-                    for i, d in enumerate(data):
-                        r = perturber.sample(d)
-                        data[i] = r == words
-                        raw_data.append(' '.join(r))
-                else:
-                    raw_data, data = utils.perturb_sentence(
-                        text, present, num_samples, self.neighbors, top_n=100,
-                        use_proba=use_proba)
+                data = np.zeros((num_samples, len(words)))
+                for i in range(len(words)):
+                    if i in present:
+                        continue
+                    probs = [1 - perturber.pr[i], perturber.pr[i]]
+                    data[:, i] = np.random.choice([0, 1], num_samples, p=probs)
+                data[:, present] = 1
+                raw_data = []
+                for i, d in enumerate(data):
+                    r = perturber.sample(d)
+                    data[i] = r == words
+                    raw_data.append(' '.join(r))
             labels = []
             if compute_labels:
                 labels = (classifier_fn(raw_data) == true_label).astype(int)
