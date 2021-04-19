@@ -29,26 +29,24 @@ class AnchorBaseBeam(object):
     def dup_bernoulli(p, level):
         lm = p
         um = min(min(1, p + np.sqrt(level / 2.)), 1)
-        for j in range(1, 17):
-            qm = (um + lm) / 2.
-    #         print 'lm', lm, 'qm', qm, kl_bernoulli(p, qm)
-            if AnchorBaseBeam.kl_bernoulli(p, qm) > level:
-                um = qm
-            else:
-                lm = qm
+        qm = (um + lm) / 2.
+#         print 'lm', lm, 'qm', qm, kl_bernoulli(p, qm)
+        if AnchorBaseBeam.kl_bernoulli(p, qm) > level:
+            um = qm
+        else:
+            lm = qm
         return um
 
     @staticmethod
     def dlow_bernoulli(p, level):
         um = p
         lm = max(min(1, p - np.sqrt(level / 2.)), 0)
-        for j in range(1, 17):
-            qm = (um + lm) / 2.
-    #         print 'lm', lm, 'qm', qm, kl_bernoulli(p, qm)
-            if AnchorBaseBeam.kl_bernoulli(p, qm) > level:
-                lm = qm
-            else:
-                um = qm
+        qm = (um + lm) / 2.
+#         print 'lm', lm, 'qm', qm, kl_bernoulli(p, qm)
+        if AnchorBaseBeam.kl_bernoulli(p, qm) > level:
+            lm = qm
+        else:
+            um = qm
         return lm
 
     @staticmethod
