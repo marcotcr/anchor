@@ -170,6 +170,13 @@ class AnchorBaseBeam(object):
             current_idx = state['current_idx']
             # idxs = range(state['data'].shape[0], state['data'].shape[0] + n)
             idxs = range(current_idx, current_idx + n)
+
+            if '<U' in str(raw_data.dtype):
+                # String types: convert types to maximum length to avoid truncation. E.g., '<U308', '<U290' -> '<U308'
+                max_dtype = max(str(state['raw_data'].dtype), str(raw_data.dtype))
+                state['raw_data'] = state['raw_data'].astype(max_dtype)
+                raw_data = raw_data.astype(max_dtype)
+
             state['t_idx'][t].update(idxs)
             state['t_nsamples'][t] += n
             state['t_positives'][t] += labels.sum()
