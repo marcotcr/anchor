@@ -172,7 +172,8 @@ class AnchorBaseBeam(object):
             idxs = range(current_idx, current_idx + n)
 
             if '<U' in str(raw_data.dtype):
-                # String types: convert types to maximum length to avoid truncation. E.g., '<U308', '<U290' -> '<U308'
+                # String types: make sure both string types are of maximum length 
+                # to avoid string truncation. E.g., '<U308', '<U290' -> '<U308'
                 max_dtype = max(str(state['raw_data'].dtype), str(raw_data.dtype))
                 state['raw_data'] = state['raw_data'].astype(max_dtype)
                 raw_data = raw_data.astype(max_dtype)
